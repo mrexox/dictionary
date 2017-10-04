@@ -1,2 +1,5 @@
-all: main.c stdafx.h
-	gcc main.c -I. -o dict
+all: main.c dictionary.o stdafx.h
+	gcc main.c dictionary.o -I. -o dict
+
+dictionary.o: dictionary.c dictionary.h stdafx.h
+	gcc -c dictionary.c -I.

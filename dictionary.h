@@ -1,20 +1,33 @@
 #include "stdafx.h"
+#define APR_MAX_WORDS 5000
 
-struct item {
-  word char[128];
-  meaning char**;
-};
+#define MW_BITV ((int)pow(2, (int)log2(APR_MAX_WORDS)) - 1)
+#define MAX_WORDS (MW_BITV+1)
 
-extern item* dictionary;
+#define NO_FREE_SPACE 2
+#define DOES_NOT_EXIST 3
+#define NOT_FOUND 4
+#define COLLISION 5
+
+typedef struct item {
+  char word[128];
+  char* meaning;
+  struct item* next;
+} item;
+
+//extern item** Dictionary;
 
 int
-find_word(char[128] word);
+initialize();
+
+struct item*
+find_word(char* word);
 
 int
-add_word(char[128], char** meaning);
+add_word(char*, char*);
 
 int
-delete_word(char[128]);
+delete_word(char*);
 
 int
-save_dictionary(char** path, char** filename);
+save_dictionary(char* path, char* filename);
