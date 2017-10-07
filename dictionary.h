@@ -30,4 +30,4 @@ int
 delete_word(char*);
 
 int
-save_dictionary(char* path, char* filename);
+save_dictionary(FILE*);
