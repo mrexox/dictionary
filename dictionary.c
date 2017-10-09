@@ -46,7 +46,7 @@ add_word(char* word, char* meaning) {
     Dictionary[hvalue] = record;
     return 0;
   }
-  while (iter->next != NULL) {
+  while (iter != NULL) {
     if (strcmp(iter->word, record->word) == 0) {
       // o Или замена слова
       // x Или ошибка 

@@ -10,8 +10,11 @@
 #define TOO_LONG_WORD     13
 
 #define UNKNOWN_COMMAND   20
+#define WORD_NOT_FOUND    21
+#define FOUND             22
+#define EMPTY_MEANING     23
 #define END               -1
-
+#define NOTHING           77
 int
 read_command(char*, char*, char*);
 char*
@@ -32,17 +35,18 @@ main() {
   // введённых пользователем
   char command;
   char word[WORD_LEN+1];	// +1 для '\0'
-  char* meaning, result;
+  char* meaning, *result;
+	result = NULL;
   int err;
   meaning = (char*)malloc(sizeof(char) * (MEANING_LEN+1)); // +1 для '\0'
 
-  
+	/* TESTING  
   printf("> ");
-  // Отлавливаем ошибки считывания
   err = read_command(&command, word, meaning);
   printf("ERR: %d, \\%c %s '%s'\n", err, command, word, meaning);
   return 0;
-  
+  */
+	
   while(RUN) {
     printf("> ");
     // Отлавливаем ошибки считывания
@@ -51,14 +55,11 @@ main() {
     case UNEXPECTED_SYNTAX:
       printf("Unexpected syntax.\n");
       continue;
-      break;
+		case UNKNOWN_COMMAND:
+			printf("Your command is not used here.\n");
+			continue;
     case NEW_LINE: 
       continue;
-      break;
-    case COMMAND_NOT_FULL:
-      printf("Command is not full.\n");
-      continue;
-      break;
     case TOO_LONG_WORD:
       printf("Word must be 128 symbols lenght.\n");
       continue;
@@ -66,18 +67,40 @@ main() {
 		
     result = execute_command(command, word, meaning, &err);
     switch (err) {
-      //...
-    case END:	RUN = 0;
+		case 0:
+			break;
+		case EMPTY_MEANING:
+			printf("Cannot add a word without a meaning.\n");
+			break;
+		case NO_FREE_SPACE:
+			printf("No free space in RAM. Close your apps that "
+						 "may eat RAM and go on.\n");
+			continue;
+		case COLLISION:
+			printf("The word exists!...\n");
+			continue;
+		case WORD_NOT_FOUND:
+			printf("Word was not found!\n");
+			continue;
+		case FOUND:
+			printf("\"%s\"\n", result);
+			break;
+    case END:
+			RUN = 0;
       printf("See you!\n");
       break;
+		case NOTHING:
+			break;
+		default:
+			printf("Something went wrong.\n");
     }
   }
 
-  free(command);
-  free(word);
   free(meaning);
-  free(result);
-		
+	if (result != NULL)
+		free(result);
+	// Add cleaning the dictionary
+	
   return 0;
 }
 
@@ -95,11 +118,11 @@ read_command(char* command, char* word, char* meaning) {
   // непробельным символом
   c = getc(stdin);
   if (!isalnum(c)) {
-    return UNEXPECTED_SYNTAX;
+    return UNKNOWN_COMMAND;
   }
   *command = c;
 
-  // Пропуск пробельных символов
+  // Пропуск пробельных символов или завершение команды
   while ( isblank(c = getc(stdin)) );
   if (c == '\n')  {
     meaning[0] = '\0';
@@ -123,27 +146,36 @@ read_command(char* command, char* word, char* meaning) {
 	 && c != '\n') {
     word[index++] = c;
   }
+
+	// Если введённое слово слишком большое, то выходим
   if (index >= WORD_LEN)
     return TOO_LONG_WORD;
   word[index] = '\0';
-
+	
+	// Команда может быть завершена переводом строки сразу
   if (c == '\n')  {
     meaning[0] = '\0';
     return 0;
   }
-  
+
+	// Команда может быть завершена после
+	// пробельных символов
   while ( isblank(c = getc(stdin)) );
   if (c == '\n')  {
     meaning[0] = '\0';
     return 0;
   }
-  
+	
+  // Возвращаем первый считанный непробельный символ
   ungetc(c, stdin);
 
+	// ... и считываем значение слова
   index = 0;
   int size = MEANING_LEN;
   while ((c = getc(stdin)) != '\n') {
     meaning[index++] = c;
+
+		// При выходе значения за заданный предел расшириряем строку
     if (index >= size) {
       meaning[index] = '\0';
       char* tmp = (char*)malloc(sizeof(char) * (size+MEANING_LEN+1)); // +1 для '\0'
@@ -159,10 +191,34 @@ read_command(char* command, char* word, char* meaning) {
 
 char*
 execute_command(char command, char* word, char* meaning, int* err) {
-  switch (command) {
-  case 'a':
-  case 'd':
-  case 'f':
-  case 'w':
+	item* itm;
+	switch (command) {
+	case 'q':
+		*err = END;
+		break;
+  case 'a': // Add - Добавить слово
+		if (strlen(meaning) == 0) {
+			*err = EMPTY_MEANING;
+			break;
+		}
+		*err = add_word(word, meaning);
+		break;
+  case 'd': // Delete - Удалить слово
+		*err = delete_word(word);
+		break;
+  case 'f': // Find - Найти слово
+		itm = find_word(word);
+		if (itm != NULL) {
+			*err = FOUND;
+			return itm->meaning;
+		}
+		else
+			*err = WORD_NOT_FOUND;
+		break;
+		//  case 'w': // Write - Записать в файл
+		//  case 'l': // List - Вывести словарь в стандартный вывод
+	default:
+		*err = NOTHING;
   }
+	return NULL;
 }
