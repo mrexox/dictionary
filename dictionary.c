@@ -108,3 +108,51 @@ delete_word(char* word) {
   }
   return NOT_FOUND;
 }
+
+int
+write_dictionary(FILE* savefile) {
+	if (savefile == NULL) {
+		return FILE_NOT_OPENED;
+	}
+	int i;
+	int err;
+	for (i = 0; i < MAX_WORDS; ++i) {
+		if (Dictionary[i]) { // Был обнулён во время инициализации
+		  item* it = Dictionary[i];
+			while (it != NULL) {
+				err = fprintf(savefile, "%s,%s\n", it->word, it->meaning);
+				if (err < 0) return WRITE_ERROR;
+				it = it->next;			 
+			}
+		}
+	}
+	return 0;
+}
+
+int
+load_dictionary(FILE* loadfile) {
+	/*
+		Читаю построчно
+		разбиваю строку на месте запятой
+		то, что до запятой - слово, после - значение
+		если запятая экранированна, то пропускаю
+		если запятая не найдена, то ошибка
+	 */
+	return -1;
+}
+
+void
+free_dictionary() {
+	int i;
+	for (i = 0; i < MAX_WORDS; ++i) {
+		if (Dictionary[i]) { 
+		  item* it = Dictionary[i];
+			while (it != NULL) {
+				item * deletable = it;
+				it = it->next;
+				free(deletable->meaning);
+				free(deletable);
+			}
+		}
+	}
+}

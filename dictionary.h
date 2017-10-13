@@ -8,6 +8,8 @@
 #define DOES_NOT_EXIST 3
 #define NOT_FOUND 4
 #define COLLISION 5
+#define FILE_NOT_OPENED 6
+#define WRITE_ERROR 7
 
 typedef struct item {
   char word[128];
@@ -30,4 +32,10 @@ int
 delete_word(char*);
 
 int
-save_dictionary(FILE*);
+write_dictionary(FILE*);
+
+int
+load_dictionary(FILE*);
+
+void
+free_dictionary();

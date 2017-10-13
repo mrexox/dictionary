@@ -56,7 +56,7 @@ main() {
       printf("Unexpected syntax.\n");
       continue;
 		case UNKNOWN_COMMAND:
-			printf("Your command is not used here.\n");
+			printf("This command will never be used here.\n");
 			continue;
     case NEW_LINE: 
       continue;
@@ -68,6 +68,9 @@ main() {
     result = execute_command(command, word, meaning, &err);
     switch (err) {
 		case 0:
+			break;
+		case UNKNOWN_COMMAND:
+			printf("This command is not supported but may be later.\n");
 			break;
 		case EMPTY_MEANING:
 			printf("Cannot add a word without a meaning.\n");
@@ -82,6 +85,12 @@ main() {
 		case WORD_NOT_FOUND:
 			printf("Word was not found!\n");
 			continue;
+		case WRITE_ERROR:
+			printf("Unable to write to the file %s\n", word);
+			break;
+		case FILE_NOT_OPENED:
+			printf("Unable to open this file %s\n", word);
+			break;
 		case FOUND:
 			printf("\"%s\"\n", result);
 			break;
@@ -99,7 +108,7 @@ main() {
   free(meaning);
 	if (result != NULL)
 		free(result);
-	// Add cleaning the dictionary
+	free_dictionary();
 	
   return 0;
 }
@@ -192,6 +201,7 @@ read_command(char* command, char* word, char* meaning) {
 char*
 execute_command(char command, char* word, char* meaning, int* err) {
 	item* itm;
+	FILE *wfile;
 	switch (command) {
 	case 'q':
 		*err = END;
@@ -215,10 +225,17 @@ execute_command(char command, char* word, char* meaning, int* err) {
 		else
 			*err = WORD_NOT_FOUND;
 		break;
-		//  case 'w': // Write - Записать в файл
-		//  case 'l': // List - Вывести словарь в стандартный вывод
+	case 'w': // Write - Записать в файл
+		wfile = fopen(word, "w");
+		*err = write_dictionary(wfile);
+		fclose(wfile);
+		break;
+	case 'l': // List - Вывести словарь в стандартный вывод
+		*err = write_dictionary(stdout);
+		break;
 	default:
-		*err = NOTHING;
+		*err = UNKNOWN_COMMAND;
   }
 	return NULL;
 }
+
